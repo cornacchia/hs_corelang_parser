@@ -46,3 +46,15 @@ type CoreProgram = Program Name
 -- name of the supercombinator, arguments, body
 type ScDefn a = (Name, [a], Expr a)
 type CoreScDefn = ScDefn Name
+
+preludeDefs :: CoreProgram
+preludeDefs = [
+  ("I", ["x"], EVar "x"),                                            -- identity: I x = x
+  ("K", ["x","y"], EVar "x"),                                        -- K x y = x
+  ("K1",["x","y"], EVar "y"),                                        -- K1 x y = y
+  ("S", ["f","g","x"], EAp (EAp (EVar "f") (EVar "x"))               -- S f g x = f x (g x)
+                           (EAp (EVar "g") (EVar "x"))),
+  ("compose", ["f","g","x"], EAp (EVar "f")                          -- compose f g x = f (g x)
+                                 (EAp (EVar "g") (EVar "x"))),
+  ("twice", ["f"], EAp (EAp (EVar "compose") (EVar "f")) (EVar "f")) -- twice f = compose f f
+]
