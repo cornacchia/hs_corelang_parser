@@ -1,3 +1,5 @@
+module ParseProg where
+
 type Name = String
 
 data Expr a
