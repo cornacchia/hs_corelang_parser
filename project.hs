@@ -58,3 +58,22 @@ preludeDefs = [
                                  (EAp (EVar "g") (EVar "x"))),
   ("twice", ["f"], EAp (EAp (EVar "compose") (EVar "f")) (EVar "f")) -- twice f = compose f f
 ]
+
+parseProg :: Parser (Program Name)
+parseProg = do p <- parseScDef
+               do character ';'
+                  ps <- parseProg
+                  return (p:ps)
+                  <|> return [p]
+
+parseScDef :: Parser (ScDefn Name)
+parseScDef = do v <- parseVar
+                pf <- many parseVar
+                character '='
+                body <- parseExpr
+                return (v, pf, body)
+
+parseExpr :: Parser (Expr Name)
+parseAExpr :: Parser (Expr Name)
+parseDef :: Parser (Def Name)
+parseAlt :: Parser (Alter Name)
