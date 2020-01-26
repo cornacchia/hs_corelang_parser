@@ -52,7 +52,7 @@ type CoreScDefn = ScDefn Name
 
 reserved :: String -> Bool
 reserved s = elem s reservedWords
-  where reservedWords = ["let", "letrec", "in", "case", "of"]
+  where reservedWords = ["let", "letrec", "in", "case", "of", "Pack"]
 
 -- ### Numbers
 -- num -> digit1 ... digitn (n >= 1)
@@ -74,11 +74,11 @@ varch = letter <|> digit <|> char '_'
 varName :: Parser String
 varName = do a <- letter
              vs <- many varch
-             return (a:vs)
+             if reserved (a:vs) then empty else return (a:vs)
 
 var :: Parser (Expr Name)
 var = do v <- varName
-         if reserved v then empty else return (EVar v)
+         return (EVar v)
 
 parseVar :: Parser (Expr Name)
 parseVar = token var
@@ -186,8 +186,8 @@ parseCase = do symbol "case"
                return (ECase e alternatives)
 
 parseLambda :: Parser (Expr Name)
-parseLambda = do symbol "\\"
-                 vs <- some varName
+parseLambda = do token (sat (== '\\'))
+                 vs <- some (token varName)
                  symbol "."
                  e <- parseExpr
                  return (ELam vs e)
