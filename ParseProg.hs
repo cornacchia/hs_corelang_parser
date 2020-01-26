@@ -25,7 +25,6 @@ type Def a = (a, Expr a)
 type Alter a = (Int, [a], Expr a)
 data IsRec = NonRecursive | Recursive
   deriving Show
-type CoreAlt = Alter Name
 
 -- this function is used to identify expressions with no internal structure
 isAtomicExpr :: Expr a -> Bool
@@ -120,13 +119,24 @@ defns = do d <- token defn
             <|> return [d]
 
 -- ## Expressions
--- expr -> expr aexpr
---      | expr1 binop expr2
---      | let defns in epxr
+-- expr -> let defns in epxr
 --      | letrec defns in expr
 --      | case expr of alts
 --      | \ var1 ... varn . expr (n >= 1)
---      | aexpr
+--      | expr1
+-- expr1 -> expr2 | expr1
+--       | expr2
+-- expr2 -> expr3 & expr2
+--       | expr3
+-- expr3 -> expr4 relop expr4
+--       | expr4
+-- expr4 -> expr5 + expr4
+--       | expr5 - expr5
+--       | expr5
+-- expr5 -> expr6 * expr5
+--       | expr6 / expr5
+--       | expr6
+-- expr6 -> aexpr1 ... aexprn (n >= 1)
 -- aexpr -> var
 --       | num
 --       | Pack{num, num}
@@ -178,8 +188,74 @@ parseLambda = do symbol "\\"
                  e <- parseExpr
                  return (ELam vs e)
 
+parseExpr6 :: Parser (Expr Name)
+parseExpr6 = do e1 <- parseAExpr
+                do e2 <- parseExpr6
+                   return (EAp e1 e2)
+                 <|> return e1
+
+parseMult :: Parser (Expr Name)
+parseMult = do e1 <- parseExpr6
+               symbol "*"
+               e2 <- parseExpr5
+               return (EAp (EAp (EVar "*") e1) e2)
+
+parseDiv :: Parser (Expr Name)
+parseDiv = do e1 <- parseExpr6
+              symbol "/"
+              e2 <- parseExpr5
+              return (EAp (EAp (EVar "/") e1) e2)
+
+parseExpr5 :: Parser (Expr Name)
+parseExpr5 = parseMult <|> parseDiv <|> parseExpr6
+
+parseSum :: Parser (Expr Name)
+parseSum = do e1 <- parseExpr5
+              symbol "+"
+              e2 <- parseExpr4
+              return (EAp (EAp (EVar "+") e1) e2)
+
+parseSub :: Parser (Expr Name)
+parseSub = do e1 <- parseExpr5
+              symbol "-"
+              e2 <- parseExpr5
+              return (EAp (EAp (EVar "-") e1) e2)
+
+parseExpr4 :: Parser (Expr Name)
+parseExpr4 = parseSum <|> parseSub <|> parseExpr5
+
+parseRelop :: Parser (Expr Name)
+parseRelop = do e1 <- parseExpr4
+                symbol "relop"
+                e2 <- parseExpr4
+                return (EAp (EAp (EVar "relop") e1) e2)
+
+parseExpr3 :: Parser (Expr Name)
+parseExpr3 = parseRelop <|> parseExpr4
+
+parseAnd :: Parser (Expr Name)
+parseAnd = do e1 <- parseExpr3
+              symbol "&"
+              e2 <- parseExpr2
+              return (EAp (EAp (EVar "&") e1) e2)
+
+parseExpr2 :: Parser (Expr Name)
+parseExpr2 = parseAnd <|> parseExpr3
+
+parseOr :: Parser (Expr Name)
+parseOr = do e1 <- parseExpr2
+             symbol "|"
+             e2 <- parseExpr1
+             return (EAp (EAp (EVar "|") e1) e2)
+
+parseExpr1 :: Parser (Expr Name)
+parseExpr1 = parseOr <|> parseExpr2
+
 parseExpr :: Parser (Expr Name)
-parseExpr = parseLet <|> parseLetRec <|> parseCase <|> parseLambda <|> parseAExpr
+parseExpr = parseLet <|> parseLetRec <|> parseCase <|> parseLambda <|> parseExpr1
+
+-- ### Supercombinators
+-- sc -> var var1 ... varn = expr (n >= 0)
 
 parseScDef :: Parser (ScDefn Name)
 parseScDef = do v <- token varName
@@ -188,6 +264,8 @@ parseScDef = do v <- token varName
                 body <- parseExpr
                 return (v, pf, body)
 
+-- ### Program
+-- program -> sc1; ... scn (n >= 1)
 parseProg :: Parser (Program Name)
 parseProg = do p <- parseScDef
                do symbol ";"
