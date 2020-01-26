@@ -50,6 +50,10 @@ type CoreProgram = Program Name
 type ScDefn a = (Name, [a], Expr a)
 type CoreScDefn = ScDefn Name
 
+reserved :: String -> Bool
+reserved s = elem s reservedWords
+  where reservedWords = ["let", "letrec", "in", "case", "of"]
+
 -- ### Numbers
 -- num -> digit1 ... digitn (n >= 1)
 
@@ -74,7 +78,7 @@ varName = do a <- letter
 
 var :: Parser (Expr Name)
 var = do v <- varName
-         return (EVar v)
+         if reserved v then empty else return (EVar v)
 
 parseVar :: Parser (Expr Name)
 parseVar = token var
