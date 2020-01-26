@@ -1,0 +1,4 @@
+f a b c = a * b - c | a & b / 2;
+g a b = case a of
+<1> -> a& b & c;
+<2> c d -> a - b * c / d

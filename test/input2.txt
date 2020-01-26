@@ -1,0 +1,6 @@
+main = double 21;
+double x = x + x;
+g y z s = case a + 1 of <1> a b -> \ g. a b s; <2> -> letrec x=fib; y=fact; z= x*y* (fib fact x y z) * z + y in x y;
+f x = h;
+h x = (let z = y in x z (a*3));
+f a = a + 2 * 4

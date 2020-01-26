@@ -1,0 +1,2 @@
+main = letrec x = x + x; y=z+1; g111 = h*3*x; f12 = case a+1 of <1> -> a+2; <2> -> \a b . a+b in z (a*3);
+f a = h a * 5
