@@ -50,17 +50,8 @@ sat cond = do p <- item
 digit :: Parser Char
 digit = sat isDigit
 
-lower :: Parser Char
-lower = sat isLower
-
-upper :: Parser Char
-upper = sat isUpper
-
 letter :: Parser Char
 letter = sat isAlpha
-
-alphanum :: Parser Char
-alphanum = sat isAlphaNum
 
 char :: Char -> Parser Char
 char c = sat (== c)
@@ -71,11 +62,6 @@ string (x:xs) = do c <- char x
                    cs <- string xs
                    return (c:cs)
 
-ident :: Parser String
-ident = do x <- lower
-           xs <- many alphanum
-           return (x:xs)
-
 nat :: Parser Int
 nat = do xs <- some digit
          return (read xs)
@@ -84,28 +70,14 @@ space :: Parser ()
 space = do many (sat isSpace)
            return ()
 
-int :: Parser Int
-int = do char '-'
-         n <- nat
-         return (-n)
-      <|> nat
-
 token :: Parser a -> Parser a
 token p = do space
              v <- p
              space
              return v
 
--- Looks for any identifier (alphanumeric string)
-identifier :: Parser String
-identifier = token ident
-
 natural :: Parser Int
 natural = token nat
 
-integer :: Parser Int
-integer = token int
-
--- Looks for a particular symbol, ignoring whitespace
 symbol :: String -> Parser String
 symbol xs = token (string xs)
