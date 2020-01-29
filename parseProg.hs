@@ -23,11 +23,11 @@ type Def a = (a, Expr a)
 
 type Alter a = (Int, [a], Expr a)
 data IsRec = NonRecursive | Recursive
-  deriving Show
+  deriving (Show, Eq)
 
-type Program a = [ScDefn a]
+type Program a = [ScDef a]
 
-type ScDefn a = (Name, [a], Expr a)
+type ScDef a = (Name, [a], Expr a)
 
 reserved :: String -> Bool
 reserved s = elem s reservedWords
@@ -240,7 +240,7 @@ parseExpr = parseLet <|> parseLetRec <|> parseCase <|> parseLambda <|> parseExpr
 -- ### Supercombinators
 -- sc -> var var1 ... varn = expr (n >= 0)
 
-parseScDef :: Parser (ScDefn Name)
+parseScDef :: Parser (ScDef Name)
 parseScDef = do v <- token varName
                 pf <- many (token varName)
                 symbol "="
