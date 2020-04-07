@@ -2,7 +2,7 @@ main = letrec x = x + x; y=z+1;
 g111 = h*3*x;
 f12 = case a+1 of <1> -> a+2;
 <2> -> \a b . a+b
-in z (a*3);
+ in z (a*3);
 f a = h a * 5;
 k a b = Pack{2,1} a;
 k1 a b = let a = 2 in letrec b = 4 in a * b *5
