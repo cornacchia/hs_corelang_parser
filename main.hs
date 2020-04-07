@@ -3,7 +3,7 @@ import Parse
 import ParseProg
 
 readF :: IO String
-readF = do inh <- openFile "input.txt" ReadMode
+readF = do inh <- openFile "./test/input1.txt" ReadMode
            prog <- readloop inh
            hClose inh
            return prog
