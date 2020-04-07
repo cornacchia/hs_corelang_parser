@@ -171,68 +171,55 @@ parseLambda = do token (sat (== '\\'))
                  e <- parseExpr
                  return (ELam vs e)
 
+buildEAp :: Expr Name -> Expr Name -> Expr Name
+buildEAp (EVar "") e = e
+buildEAp e1 e2 = EAp e1 e2
+
+
 parseExpr6 :: Parser (Expr Name)
-parseExpr6 = do e1 <- parseAExpr
-                do e2 <- parseExpr6
-                   return (EAp e1 e2)
-                 <|> return e1
-
-parseMult :: Parser (Expr Name)
-parseMult = do e1 <- parseExpr6
-               symbol "*"
-               e2 <- parseExpr5
-               return (EAp (EAp (EVar "*") e1) e2)
-
-parseDiv :: Parser (Expr Name)
-parseDiv = do e1 <- parseExpr6
-              symbol "/"
-              e2 <- parseExpr5
-              return (EAp (EAp (EVar "/") e1) e2)
+parseExpr6 = do exprs <- some parseAExpr
+                return ((foldl EAp (head exprs)) (tail exprs))
 
 parseExpr5 :: Parser (Expr Name)
-parseExpr5 = parseMult <|> parseDiv <|> parseExpr6
-
-parseSum :: Parser (Expr Name)
-parseSum = do e1 <- parseExpr5
-              symbol "+"
-              e2 <- parseExpr4
-              return (EAp (EAp (EVar "+") e1) e2)
-
-parseSub :: Parser (Expr Name)
-parseSub = do e1 <- parseExpr5
-              symbol "-"
-              e2 <- parseExpr5
-              return (EAp (EAp (EVar "-") e1) e2)
+parseExpr5 = do e1 <- parseExpr6
+                do symbol "*"
+                   e2 <- parseExpr5
+                   return (EAp (EAp (EVar "*") e1) e2)
+                  <|> do symbol "/"
+                         e2 <- parseExpr6
+                         return (EAp (EAp (EVar "/") e1) e2)
+                        <|> return e1
 
 parseExpr4 :: Parser (Expr Name)
-parseExpr4 = parseSum <|> parseSub <|> parseExpr5
-
-parseRelop :: Parser (Expr Name)
-parseRelop = do e1 <- parseExpr4
-                symbol "relop"
-                e2 <- parseExpr4
-                return (EAp (EAp (EVar "relop") e1) e2)
+parseExpr4 = do e1 <- parseExpr5
+                do symbol "+"
+                   e2 <- parseExpr4
+                   return (EAp (EAp (EVar "+") e1) e2)
+                  <|> do symbol "-"
+                         e2 <- parseExpr5
+                         return (EAp (EAp (EVar "-") e1) e2)
+                        <|> return e1
 
 parseExpr3 :: Parser (Expr Name)
-parseExpr3 = parseRelop <|> parseExpr4
-
-parseAnd :: Parser (Expr Name)
-parseAnd = do e1 <- parseExpr3
-              symbol "&"
-              e2 <- parseExpr2
-              return (EAp (EAp (EVar "&") e1) e2)
+parseExpr3 = do e1 <- parseExpr4
+                do symbol "relop"
+                   e2 <- parseExpr4
+                   return (EAp (EAp (EVar "relop") e1) e2)
+                  <|> return e1
 
 parseExpr2 :: Parser (Expr Name)
-parseExpr2 = parseAnd <|> parseExpr3
-
-parseOr :: Parser (Expr Name)
-parseOr = do e1 <- parseExpr2
-             symbol "|"
-             e2 <- parseExpr1
-             return (EAp (EAp (EVar "|") e1) e2)
+parseExpr2 = do e1 <- parseExpr3
+                do symbol "&"
+                   e2 <- parseExpr2
+                   return (EAp (EAp (EVar "&") e1) e2)
+                  <|> return e1
 
 parseExpr1 :: Parser (Expr Name)
-parseExpr1 = parseOr <|> parseExpr2
+parseExpr1 = do e1 <- parseExpr2
+                do symbol "|"
+                   e2 <- parseExpr1
+                   return (EAp (EAp (EVar "|") e1) e2)
+                  <|> return e1
 
 parseExpr :: Parser (Expr Name)
 parseExpr = parseLet <|> parseLetRec <|> parseCase <|> parseLambda <|> parseExpr1
